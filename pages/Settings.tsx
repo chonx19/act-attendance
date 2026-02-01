@@ -3,6 +3,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useInventory } from '../contexts/InventoryContext';
 import { Save, Download, Upload, Lock, Shield, Globe, Users, Trash2, Plus, Edit } from 'lucide-react';
 import { UserRole, User, PERMISSIONS } from '../types';
+import * as XLSX from 'xlsx';
 
 const SERVER_URL = '/api';
 
@@ -39,26 +40,78 @@ const Settings = () => {
     };
 
     const handleBackup = async () => {
-        try { window.open(`${SERVER_URL}/backup`, '_blank'); } catch (e) { alert(t('error')); }
+        try {
+            // 1. Fetch Full Data
+            const res = await fetch(`${SERVER_URL}/backup`);
+            if (!res.ok) throw new Error('Fetch failed');
+            const data = await res.json();
+
+            // 2. Create Workbook
+            const wb = XLSX.utils.book_new();
+
+            // 3. Add Sheets for each key
+            Object.keys(data).forEach(key => {
+                const content = data[key];
+                if (Array.isArray(content) && content.length > 0) {
+                    const ws = XLSX.utils.json_to_sheet(content);
+                    XLSX.utils.book_append_sheet(wb, ws, key); // Sheet Name = key (e.g., 'products')
+                } else if (Array.isArray(content) && content.length === 0) {
+                    // Empty sheet with headers if possible, or skip? 
+                    // Let's create empty sheet
+                    const ws = XLSX.utils.json_to_sheet([]);
+                    XLSX.utils.book_append_sheet(wb, ws, key);
+                }
+            });
+
+            // 4. Download
+            XLSX.writeFile(wb, `ACT_Full_Backup_${new Date().toISOString().split('T')[0]}.xlsx`);
+
+        } catch (e) {
+            console.error(e);
+            alert(t('error'));
+        }
     };
 
     const handleRestore = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!e.target.files?.[0]) return;
         if (!confirm(t('restoreWarning'))) return;
+
         const file = e.target.files[0];
         const reader = new FileReader();
+
         reader.onload = async (event) => {
             try {
-                const json = JSON.parse(event.target?.result as string);
+                const data = new Uint8Array(event.target?.result as ArrayBuffer);
+                const wb = XLSX.read(data, { type: 'array' });
+
+                const restoreData: any = {};
+
+                // Convert each sheet back to JSON
+                wb.SheetNames.forEach(sheetName => {
+                    const ws = wb.Sheets[sheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(ws);
+                    restoreData[sheetName] = jsonData;
+                });
+
+                // Send to Server
                 const res = await fetch(`${SERVER_URL}/restore`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(json)
+                    body: JSON.stringify(restoreData)
                 });
-                if (res.ok) alert(t('success')); else alert(t('error'));
-            } catch (err) { alert('Invalid File'); }
+
+                if (res.ok) {
+                    alert(t('success'));
+                    setTimeout(() => window.location.reload(), 1000); // Reload to reflect changes
+                } else {
+                    alert(t('error'));
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Invalid Excel File');
+            }
         };
-        reader.readAsText(file);
+        reader.readAsArrayBuffer(file);
     };
 
     const HandleAddUser = async () => {
@@ -218,8 +271,8 @@ const Settings = () => {
                     <div className="flex gap-4">
                         <button onClick={handleBackup} className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-bold shadow-sm transition-colors"><Download className="w-5 h-5" /> {t('backupData')}</button>
                         <div className="relative">
-                            <input type="file" accept=".json" onChange={handleRestore} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
-                            <button className="flex items-center gap-2 bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-3 rounded-lg font-bold shadow-sm transition-colors pointer-events-none"><Upload className="w-5 h-5" /> {t('restoreData')}</button>
+                            <input type="file" accept=".xlsx, .xls" onChange={handleRestore} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                            <button className="flex items-center gap-2 bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-3 rounded-lg font-bold shadow-sm transition-colors pointer-events-none"><Upload className="w-5 h-5" /> {t('restoreData')} (Excel)</button>
                         </div>
                     </div>
                 </div>

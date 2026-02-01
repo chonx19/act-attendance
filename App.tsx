@@ -28,6 +28,24 @@ const ProtectedRoute = ({ children }: { children?: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+const getHomeRoute = (user: any) => {
+  if (!user) return '/login';
+  if (user.role === UserRole.ADMIN) return '/app/dashboard';
+  if (user.role === UserRole.CUSTOMER) return '/app/contact';
+
+  // Order of priority for User role
+  if (user.permissions?.includes(PERMISSIONS.DASHBOARD)) return '/app/dashboard';
+  if (user.permissions?.includes(PERMISSIONS.KANBAN)) return '/app/kanban';
+  if (user.permissions?.includes(PERMISSIONS.ATTENDANCE)) return '/app/attendance';
+  if (user.permissions?.includes(PERMISSIONS.PRODUCTS)) return '/app/products';
+  if (user.permissions?.includes(PERMISSIONS.STOCK)) return '/app/stock-movement';
+  if (user.permissions?.includes(PERMISSIONS.CUSTOMERS)) return '/app/customers';
+  if (user.permissions?.includes(PERMISSIONS.REPORTS)) return '/app/reports';
+  if (user.permissions?.includes(PERMISSIONS.DEVICES)) return '/app/devices';
+
+  return '/app/contact'; // Fallback
+};
+
 const PermissionRoute = ({ permission, children }: { permission: string, children: React.ReactNode }) => {
   const { user } = useAuth();
   if (!user) return <Navigate to="/login" replace />;
@@ -37,21 +55,19 @@ const PermissionRoute = ({ permission, children }: { permission: string, childre
     return <>{children}</>;
   }
 
-  return <Navigate to="/app/dashboard" replace />;
+  // If permission denied, go to their home route
+  return <Navigate to={getHomeRoute(user)} replace />;
 };
 
 const AdminRoute = ({ children }: { children?: React.ReactNode }) => {
   const { user } = useAuth();
-  if (!user || user.role !== UserRole.ADMIN) return <Navigate to="/app/dashboard" replace />;
+  if (!user || user.role !== UserRole.ADMIN) return <Navigate to={getHomeRoute(user)} replace />;
   return <>{children}</>;
 };
 
 const AppHomeRedirect = () => {
   const { user } = useAuth();
-  if (user?.role === UserRole.CUSTOMER) {
-    return <Navigate to="/app/contact" replace />;
-  }
-  return <Navigate to="/app/dashboard" replace />;
+  return <Navigate to={getHomeRoute(user)} replace />;
 };
 
 const App = () => {

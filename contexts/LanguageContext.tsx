@@ -16,6 +16,7 @@ const translations = {
     status: 'Status',
     remarks: 'Remarks',
     action: 'Action',
+    filter: 'Filter',
     syncLogs: 'Sync Logs',
     syncNames: 'Sync Names',
     exportExcel: 'Export Excel',
@@ -62,6 +63,18 @@ const translations = {
     menu_admin: 'Admin',
     menu_manage_users: 'Manage Users',
     nav_logout: 'Logout',
+    // Dashboard
+    dash_title: 'Dashboard',
+    dash_total_products: 'Total Products',
+    dash_total_stock: 'Total Stock',
+    dash_low_stock: 'Low Stock Items',
+    dash_total_value: 'Total Value',
+    dash_recent_activity: 'Recent Activity',
+    dash_subtitle: 'Overview of system performance and stock status',
+    // Products
+    prod_search_ph: 'Search by Name, Code, or Barcode...',
+    prod_all_locations: 'All Locations',
+    prod_all_suppliers: 'All Suppliers',
     // Kanban
     kb_status_rfq: 'RFQ',
     kb_status_quotation: 'Quotation',
@@ -113,6 +126,7 @@ const translations = {
     status: 'สถานะ',
     remarks: 'หมายเหตุ',
     action: 'จัดการ',
+    filter: 'ตัวกรอง',
     syncLogs: 'ดึงข้อมูลเวลา',
     syncNames: 'ดึงรายชื่อ',
     exportExcel: 'ส่งออก Excel',
@@ -159,6 +173,18 @@ const translations = {
     menu_admin: 'ผู้ดูแลระบบ',
     menu_manage_users: 'จัดการผู้ใช้',
     nav_logout: 'ออกจากระบบ',
+    // Dashboard
+    dash_title: 'ภาพรวมระบบ (Dashboard)',
+    dash_total_products: 'จำนวนสินค้าทั้งหมด',
+    dash_total_stock: 'ยอดสต็อกรวม',
+    dash_low_stock: 'สินค้าใกล้หมด',
+    dash_total_value: 'มูลค่ารวม',
+    dash_recent_activity: 'กิจกรรมล่าสุด',
+    dash_subtitle: 'ภาพรวมระบบและสถานะสต็อกสินค้า',
+    // Products
+    prod_search_ph: 'ค้นหาด้วยชื่อ, รหัส หรือบาร์โค้ด...',
+    prod_all_locations: 'ทุกสถานที่เก็บ',
+    prod_all_suppliers: 'ทุกผู้จำหน่าย',
     // Kanban
     kb_status_rfq: 'ขอใบเสนอราคา (RFQ)',
     kb_status_quotation: 'เสนอราคา (Quotation)',

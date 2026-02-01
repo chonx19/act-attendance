@@ -229,7 +229,7 @@ const ProductList = () => {
             className={`flex items-center px-3 py-2 border rounded-lg transition-colors ${showFilters ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'} dark:bg-slate-800 dark:border-slate-600 dark:text-gray-200`}
           >
             <Filter className="w-4 h-4 mr-2" />
-            Filter
+            {t('filter')}
           </button>
 
           {showFilters && (
@@ -390,8 +390,8 @@ const ProductList = () => {
                 </div>
               </div>
               <div className="pt-4 flex justify-end space-x-3">
-                <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-700 dark:text-gray-300">Cancel</button>
-                <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Save</button>
+                <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-700 dark:text-gray-300">{t('cancel')}</button>
+                <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">{t('save')}</button>
               </div>
             </form>
           </div>

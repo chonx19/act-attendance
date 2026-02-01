@@ -306,15 +306,32 @@ app.post('/api/users/sync', async (req, res) => {
 });
 
 // --- Backup & Restore ---
+// --- Backup & Restore ---
+const BACKUP_KEYS = [
+    'devices', 'users', 'attendance', 'employees',
+    'products', 'stock', 'transactions', 'pos',
+    'customers', 'sessions', 'whitelist', 'messages',
+    'customer_products', 'tasks', 'worklogs'
+];
+
 app.get('/api/backup', async (req, res) => {
     try {
-        const data = {
-            devices: await getData(DEVICES_FILE),
-            users: await getData(USERS_FILE),
-            attendance: await getData(ATTENDANCE_FILE),
-            employees: await getData(EMPLOYEES_FILE)
-        };
-        res.json(data);
+        const backupData = {};
+        for (const key of BACKUP_KEYS) {
+            // Special handling for legacy file maps vs new generic files
+            // Most match generic 'key.json' pattern except the originals
+            let filename = `${key}.json`;
+            // 'users', 'devices', 'attendance', 'employees' match this pattern too
+
+            backupData[key] = await getData(filename);
+        }
+
+        // Set Headers for Download
+        const date = new Date().toISOString().split('T')[0];
+        res.setHeader('Content-Disposition', `attachment; filename="ACT_Backup_${date}.json"`);
+        res.setHeader('Content-Type', 'application/json');
+
+        res.json(backupData);
     } catch (e) {
         res.status(500).json({ error: 'Backup failed', details: e.message });
     }
@@ -323,15 +340,18 @@ app.get('/api/backup', async (req, res) => {
 app.post('/api/restore', async (req, res) => {
     try {
         const backup = req.body;
-        if (!backup) return res.status(400).send('Invalid backup format');
+        if (!backup || typeof backup !== 'object') return res.status(400).send('Invalid backup format');
 
-        if (backup.devices) await saveData(DEVICES_FILE, backup.devices);
-        if (backup.users) await saveData(USERS_FILE, backup.users);
-        if (backup.attendance) await saveData(ATTENDANCE_FILE, backup.attendance);
-        if (backup.employees) await saveData(EMPLOYEES_FILE, backup.employees);
+        let restoreCount = 0;
+        for (const key of BACKUP_KEYS) {
+            if (Array.isArray(backup[key])) {
+                await saveData(`${key}.json`, backup[key]);
+                restoreCount++;
+            }
+        }
 
-        console.log('[API] Data restored from backup');
-        res.json({ success: true, message: 'Restore successful.' });
+        console.log(`[API] Restored ${restoreCount} modules from backup`);
+        res.json({ success: true, message: `Restored ${restoreCount} modules successfully.` });
     } catch (e) {
         console.error('Restore Error:', e);
         res.status(500).json({ error: 'Restore failed', details: e.message });
