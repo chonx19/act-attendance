@@ -1,0 +1,5 @@
+{
+  "name": "ACT",
+  "description": "A modern, responsive Inventory & Stock Management System designed for efficiency. Features include barcode scanning support, stock tracking, goods in/out management, and real-time dashboard analytics. Built as a pure frontend solution with local persistence.",
+  "requestFramePermissions": []
+}

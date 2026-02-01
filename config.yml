@@ -1,0 +1,9 @@
+tunnel: act-server
+credentials-file: C:\Users\Chana\.cloudflared\18d441e3-d870-4414-b2f3-4df4072f96ec.json
+ 
+ingress:
+  - hostname: act-and-r.site
+    service: http://localhost:3001
+  - service: http_status:404
+  
+protocol: http2

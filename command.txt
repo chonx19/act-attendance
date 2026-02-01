@@ -1,0 +1,1779 @@
+
+[Company name]
+
+DELI offline SDK protocol
+
+[Document subtitle]
+
+
+1-25-2025
+
+ 
+Table of contents
+Device control interface	4
+Interface address	4
+Request message format	4
+Response message format	4
+Command successful response	5
+Error Response	5
+Security Configuration	6
+SetSecurityConfig	6
+User synchronization	7
+GetUserIdList	7
+GetUserInfo	8
+SetUserInfo	9
+DeleteUserInfo	10
+Prohibit or allow the use of the machine	11
+LockDevice	11
+Remote registration of features	12
+BeginEnrollFace	12
+BeginEnrollFP	12
+BeginEnrollCard	12
+BeginEnrollPalm	13
+QueryJobStatus	13
+CancelJob	14
+CancelAllJobs	15
+PhotoToFacedata	15
+Attendance record management	16
+GetAttendLog	16
+EraseAttendLog	17
+Automatic reporting of attendance records	18
+ConfigAttendLogUploader	18
+GetAttendLogUploaderStatus	19
+Time Synchronization	20
+GetDeviceTime	20
+SetDeviceTime	20
+Device network configuration	21
+GetNetworkConfig	21
+SetNetworkConfig	22
+Device information query and settings	24
+GetVersionInfo	24
+GetCapacityLimit	24
+GetChangeUserInfoOnDeviceAllowed	25
+SetChangeUserInfoOnDeviceAllowed	25
+GetCurrentUsage	25
+GetDeviceUid	26
+GetDeviceCapabilities	26
+GetBellSetting, SetBellSetting	27
+GetDeviceId, SetDeviceId	28
+GetSoundVolume, SetSoundVolume	29
+GetReverifyTime, SetReverifyTime	29
+GetVerifyMode, SetVerifyMode	30
+GetFaceVerifySetting, SetFaceVerifySetting	31
+DeviceControl	32
+Shift settings and user shift settings	32
+GetShiftMode, SetShiftMode	32
+GetAttendaceTolerance, SetAttendaceTolerance	33
+GetShiftSetting, SetShiftSetting	33
+GetUserShift, SetUserShift	35
+Access control settings	36
+GetAcTimeZone, SetAcTimeZone	36
+GetAcUserInfo, SetAcUserInfo	37
+GetAcSetting, SetAcSetting	38
+Department Management	39
+GetDeptList	39
+SetDept	39
+
+ 
+Device control interface
+Interface address
+The device can be controlled via http or https interface. The URL of the device control interface is as follows.
+http(s)://device IP address/control?api_key=API key
+
+Parameter Description
+Device IP address	The IP address or DNS hostname of the device.
+API Key	The key is used for authentication. The device will only accept commands if the key matches the currently set value. The API key can be set via the SetSecurityConfigcommand.
+
+
+In the factory settings, the device is configured to enable the http interface and disable the https interface by default. These can be changed through the SetSecurityConfigcommand. All requests are sent in the form of http POST messages.
+Request message format
+All messages sent from the application to the device should be json data with the following format.
+{
+"mid" : "a123456",
+"cmd" : "GetUserInfo",
+"payload" : { ... }
+}
+
+Parameter Description
+mid	Message ID. Length must not exceed 32 characters. A response message will have the same message ID as its corresponding request message.
+cmd	Indicates the type of operation that the device is to perform.
+payload	Additional information required to perform the specified operation. Its format depends on the cmd parameter.
+
+Response message format
+After receiving the command, the device should perform the requested action and return json data in the following format.
+{
+"mid" : "a123456",
+"result" : "UserInfo",
+"payload" : { ... }
+}
+
+Parameter Description
+mid	Message ID. A response message will have the same message ID as its corresponding request.
+result	Indicates the kind of information this message contains. Each request has a specific set of possible response types.
+payload	Contains data that the device wants to send to the application. Its format depends on the result parameter.
+
+Command successful response
+When the command completes successfully and there is no further information to send, the device will respond with the following message.
+{
+"mid" : "a123456",
+"result" : "Success",
+"payload" : {}
+}
+
+Error Response
+When the command fails, the device will respond with the following message.
+{
+"mid" : "a123456",
+"result" : "Error",
+"payload" : {
+  "code" : "user_id_not_exists",
+  "arguments": [12]
+ }
+}
+
+Parameter Description
+code	Indicates the type of error that occurred.
+arguments	Describes detailed information about the error. The meaning of this parameter depends on the code.
+
+ 
+Security Configuration
+SetSecurityConfig
+This command configures communication security parameters.
+Example
+request	response
+{
+  "mid"     : "a123456",
+  "cmd"     : "SetSecurityConfig",
+  "payload" : {
+    "api_key": "API key",
+    "enable_http": "yes",
+    "tls_conf": {
+      "enabled": "yes",
+      "validate_certificate": "yes",
+      "ca_cert": "PEM-encoded CA certificate",
+      "device_cert": "PEM-encoded certificate",
+      "device_key ": "PEM-encoded private key"
+    }
+  }
+}	{
+"mid" : "a123456",
+"result" : "Success",
+"payload" : {}
+}
+
+Request parameter description
+api_key	After setting, all commands must specify the API key in their request URL. See [ Interface address].
+
+enable_http	yes: to enable the device http interface, no: to disable it.
+tls_conf	
+enabled	yes: to enable the device https interface, no: to disable it.
+  validate_certificate	yes: The device will verify the server certificate when invoking https requests.
+no: The device will not verify the server certificate.
+(This setting is used when the device uploads attendance records.)
+  ca_cert	The certificate authority certificate (PEM-encoded) that the device will use when verifying the server certificate.
+  device_cert	The TLS certificate (PEM encoded) that the device https interface will use.
+  device_key	The private key corresponding to the device certificate (PEM encoded).
+
+ 
+User synchronization
+GetUserIdList
+Retrieve a list of user IDs.
+Example
+request	response
+{
+"mid" : "a123456",
+"cmd" : "GetUserIdList",
+"payload" : {
+  "start_pos": 0  // Optional
+  }
+}	{
+"mid" : "a123456",
+"result" : "UserIdList",
+"payload" : {
+  "user_id" : [ "1", "5", "12" ],
+  "next_page_pos": 50
+}
+}
+
+Request parameter description
+start_pos	Optional, when this parameter is omitted, the device will return the first N IDs from the user list (N is device model specific, e.g. 50).
+When this parameter is specified, the device will start returning user IDs from this position.
+
+Corresponding parameter description
+user_id	Array of user IDs.
+next_page_pos	start_pos in the next request to get the remaining user IDs. If the end of the user list is reached, this parameter is not present in the response message.
+
+Communication example for obtaining a list of user IDs
+order	request	response	description
+1	{
+"mid": "1",
+"cmd": "GetUserIdList",
+"payload" : {}
+}	{
+"mid": "1",
+"result": "UserIdList",
+"payload" : {
+"user_id" : [ "1", "5", "12", ... ],
+"next_page_pos": 50
+}
+}	The application requests a list of user IDs.
+The device returns the first 50 user IDs.
+2	{
+  "mid": "2",
+  "cmd": "GetUserIdList",
+  "payload" : {
+    "start_pos": 50
+  }
+}	{
+  "mid": "2",
+  "result": "UserIdList",
+  "payload" : {
+    "user_id" : ["121", "124", "125", ...],
+    "next_page_pos" : 100
+}
+}	The application requests a list of user IDs starting at position 50.
+The device returns the 51st to 100th user IDs.
+3	{
+"mid": "3",
+"cmd": "GetUserIdList",
+"payload" : {
+"start_pos": 100
+}
+}	{
+"mid": "3",
+"result": "UserIdList",
+"payload" : {
+"user_id" : [ "183", "187", "190", ... ]
+}
+	The application requests a list of user IDs starting at position 100.
+The device returns user IDs starting from the 101th to the end of the list .
+
+GetUserInfo
+Get user information.
+Example
+request	response
+{
+"mid" : "a123456",
+"cmd" : "GetUserInfo",
+"payload" : {
+    "id": "1"
+  }
+}	{
+  "mid"     : "a123456",
+  "result"  : "UserInfo",
+  "payload" : {
+    "id"       : "1",
+"name"     : "aaaaa",
+"depart"   : "bbbbb",
+    "privilege": "user",
+    "password" : "12345",
+    "card"     : "102845102",
+"fp" : [ "base64-encoded data", ... ],
+"face" : "base64-encoded data",
+"palm" : [ "base64-encoded data", ... ]
+}
+}
+
+Request parameter description
+id	User ID. Call the GetUserIdListcommand to obtain the user ID list.
+
+
+Corresponding parameter description
+id	User ID.
+name	User's name.
+depart	User's department.
+privilege	Can be one of:
+•	user ： ordinary user
+•	manager ：Administrator
+•	admin : super administrator
+password	Password. If the device does not support password authentication, this parameter does not appear.
+card	Card number. If the device does not support ID cards, this parameter will not appear.
+fp	Fingerprint template. If the device does not support fingerprint, this parameter will not appear.
+face	Face template. If the device does not support faces, this parameter will not appear.
+palm	Palm template. If the device does not support palm, this parameter will not appear.
+
+SetUserInfo
+Change user information.
+Example
+request	response
+{
+"mid" : "a123456",
+"cmd" : "SetUserInfo",
+"payload" : {
+  "id" : "1",
+  "name" : "aaaaa",
+  "depart"   : "bbbbb",
+  "privilege": "user",
+  "password" : "12345"
+  "card" : "102845102",
+  "fp" : [ "base64-encoded data", ... ],
+  "face" : "base64 encoded data",
+  "palm" : [ "base64-encoded data", ... ]s
+  }
+}	{
+"mid" : "a123456",
+"result" : "Success",
+"payload" : {}
+}
+
+Request parameter description
+id	User ID. If the ID does not exist, a new user will be created.
+name	User name. Can be omitted to keep current name.
+depart	User department. Can be omitted to keep current department.
+privilege	Can be one of:
+•	user ： ordinary user
+•	manager ：Administrator
+•	admin : super administrator
+May be omitted to preserve the current user level.
+password	Password. Can be omitted to keep the current password.
+If the device does not support password authentication, this parameter is ignored.
+card	Card number. Can be omitted to keep the current card number.
+If the device does not support ID cards, this parameter is ignored.
+fp	Fingerprint template. Can be omitted to keep current information.
+If the device does not support fingerprint, this parameter is ignored.
+face	Face template. Can be omitted to keep current information.
+If the device does not support face recognition, this parameter is ignored.
+palm	Palm template. Can be omitted to keep current information.
+If the device does not support palm, this parameter is ignored.
+
+(Please refer to "Prohibit or allow the use of the machine".)
+
+DeleteUserInfo
+Delete a user .
+Example
+request	response
+{
+"mid" : "a123456",
+"cmd" : "DeleteUserInfo",
+  "payload" : {
+  "id": "1"
+  }
+}	{
+"mid" : "a123456",
+"result" : "Success",
+"payload" : {}
+}
+
+Request parameter description
+id	User ID . Call the GetUserIdListcommand to obtain the user ID list .
+
+
+(Please refer to "Prohibit or allow the use of the machine".) 
+Prohibit or allow the use of the machine
+LockDevice
+Prohibit or allow the use of the machine.
+Example
+request	response
+{
+"mid" : "a123456",
+"cmd" : "LockDevice",
+"payload" : {
+"is_locked": "yes"
+}
+}	{
+"mid" : "a123456",
+"result" : "Success",
+"payload" : { }
+}
+}
+
+Request parameter description
+is_locked	"yes", prohibit the use of the machine.
+"no" allows the use of the machine.
+
+When changing user information, if the user performs verification casually, it will lead to abnormal status.
+Suggestion: Before changing the user information, prohibit the use of the machine. After changing the user information, allow the use of the machine.
+ 
+Remote registration of features
+BeginEnrollFace
+Start the face registration process.
+Example
+request	response
+{
+"mid" : "a123456",
+"cmd" : "BeginEnrollFace",
+"payload" : {}
+}	{
+"mid" : "a123456",
+"result" : "JobCreated",
+"payload" : {
+"job_id": 1
+}
+}
+
+Response Parameter Description
+job_id	Unique job ID assigned by the device. This ID will be used in QueryJobStatusand CancelJobcommands.
+
+
+BeginEnrollFP
+Start the fingerprint registration process.
+Example
+request	response
+{
+"mid" : "a123456",
+"cmd" : "BeginEnrollFp",
+"payload" : {}
+}	{
+"mid" : "a123456",
+"result" : "JobCreated",
+"payload" : {
+"job_id": 1
+}
+}
+
+Response Parameter Description
+job_id	Unique job ID assigned by the device. This ID will be used in QueryJobStatusand CancelJobcommands.
+
+
+BeginEnrollCard
+Start the card registration process.
+Example
+request	response
+{
+"mid" : "a123456",
+"cmd" : "BeginEnrollCard",
+"payload" : {}
+}	{
+"mid" : "a123456",
+"result" : "JobCreated",
+"payload" : {
+"job_id": 1
+}
+}
+
+Response Parameter Description
+job_id	Unique job ID assigned by the device. This ID will be used in QueryJobStatusand CancelJobcommands.
+
+
+BeginEnrollPalm
+Start the palm registration process.
+Example
+request	response
+{
+"mid" : "a123456",
+"cmd" : "BeginEnrollPalm",
+"payload" : {}
+}	{
+"mid" : "a123456",
+"result" : "JobCreated",
+"payload" : {
+"job_id": 1
+}
+}
+
+Response Parameter Description
+job_id	Unique job ID assigned by the device. This ID will be used in QueryJobStatusand CancelJobcommands.
+
+
+QueryJobStatus
+Gets the current status of the registered job.
+Example
+request	response
+{
+"mid" : "a123456",
+"cmd" : "QueryJobStatus",
+"payload" : {
+    "job_id": 1
+  }
+}	{
+  "mid"     : "a123456",
+  "result"  : "JobStatus",
+  "payload" : {
+    "job_id"   : 1,
+    "state"    : "succeeded",
+    "face_data" : "base64 encoded data"
+    "fp_data": "base64 encoded data"
+    "card_data": "decimal integer"
+    }
+}
+
+Request parameter description
+job_id	Unique job ID assigned by the device. Call the [ BeginEnrollFace] or      [ BeginEnrollFP] or [ BeginEnrollCard ] or [ BeginEnrollPalm ] command to start the enrollment process and obtain the job ID.
+
+Response Parameter Description
+job_id	Unique job ID assigned by the device.
+state	Can be one of:
+•	pending : This job has not yet been completed.
+•	succeeded : The job succeeded.
+•	failed : The job has failed or has been canceled.
+face_data	Base64-encoded face template.
+This parameter exists only when the job is created by the BeginEnrollFacecommand and the job has been completed (state =succeeded ).
+fp_data	Base64-encoded fingerprint template.
+This parameter exists only when the job is created through the [ BeginEnrollFP] command and the job has been completed (state =succeeded ).
+card_data	Decimal integer, card ID.
+This parameter exists only when the job is created through the [BeginEnrollCard ] command and the job has been completed (state =succeeded ).
+palm_data	Base64-encoded palm template.
+This parameter exists only when the job is created through the [BeginEnrollPalm ] command and the job has been completed (state =succeeded ).
+
+CancelJob
+Cancels a feature registration job.
+Example
+request	response
+{
+"mid" : "a123456",
+"cmd" : "CancelJob",
+"payload" : {
+"job_id": 1
+}
+}	{
+"mid" : "a123456",
+"result" : "Success",
+"payload" : {}
+}
+
+Request parameter description
+job_id	Unique job ID assigned by the device. Call the [ BeginEnrollFace] or       [ BeginEnrollFP] or [BeginEnrollCard ] or [ BeginEnrollPalm ] command to start the enrollment process and obtain the job ID.
+
+CancelAllJobs
+Cancel any feature registration job, if one exists.
+Example
+request	response
+{
+"mid" : "a123456",
+"cmd" : "CancelAllJobs",
+"payload" : {}
+}	{
+"mid" : "a123456",
+"result" : "Success",
+"payload" : {}
+}
+
+PhotoToFacedata
+Convert photo into face template. (For visible light face recognition only.)
+Example
+request	response
+{
+"mid": "a123456",
+"cmd": "PhotoToFacedata",
+"payload": {
+"photo": "base64 encoded data(jpg)"
+}
+}	{
+"mid": "a123456",
+"result": "PhotoToFaceData"
+"payload": {
+"face_data": "base64 encoded data",
+"state": "succeeded"
+"state": "process_fail"
+"state": "decode_fail"
+"state": "dimension_overflow"
+},
+}
+
+Request parameter description
+photo	Base64-encoded photo data, must be a jpg file.
+Maximum dimension is 480x640.
+
+Response Parameter Description
+state	Can be one of:
+•	succeeded : The conversion succeeded.
+•	process_fail: The conversion failed.
+•	decode_fail: Invalid jpg file.
+•	dimension_overflow: The dimension overflow.
+face_data	Base64-encoded face template.
+This parameter exists only when the conversion succeeded (state =succeeded ).
+ 
+Attendance record management
+GetAttendLog
+Example
+request	response
+{
+"mid" : "a123456",
+"cmd" : "GetAttendLog",
+"payload" : {
+"start_pos": 0  // Optional
+}
+}	{
+"mid" : "a123456",
+"result" : "AttendLog",
+"payload" : {
+"start_pos": 0,
+"next_pos": 50,
+"logs" : [
+{
+"user_id": "1",
+"time": "2020-04-01T08:10:05",
+"mode": "face "
+}
+      ...
+]
+}
+}
+
+Request parameter description
+start_pos	Optional, when this parameter is omitted, the device will return the first N records from the attendance record (N is device model specific, e.g. 100).
+When this parameter is specified, the device will start returning attendance records from this position.
+
+Response Parameter Description
+start_pos	The starting position of the attendance record currently returned.
+next_pos	The end position of the currently returned attendance records. Specify this position in the next request to continue reading the remaining attendance records.
+logs	
+  user_id	The authenticated user ID.
+  time	Verification time, in iso8601 format.
+  mode	Authentication method. Can be a comma-separated list of the following values:
+•	face ：Face verification
+•	fp : Fingerprint verification
+•	card: ID card verification
+•	pwd : Password verification
+
+Incremental download of attendance records
+When downloading attendance logs, the application can continue from the last download position and only get the newly generated logs. To do this, the application should save the next_pos parameter of the previous response message and provide the value to the next incremental download request.
+EraseAttendLog
+Clear attendance records until the specified location.
+Example
+Request	response
+{
+"mid" : "a123456",
+"cmd" : "EraseAttendLog",
+"payload" : {
+"end_pos": 10
+}
+}	{
+"mid" : "a123456",
+"result" : "Success",
+"payload" : {}
+}
+
+Request parameter description
+end_pos	All previous attendance records for this position will be deleted.
+
+can be called after [ GetAttendLog] to delete the downloaded attendance records.
+ 
+Automatic reporting of attendance records
+ConfigAttendLogUploader
+Example
+request	response
+{
+"mid" : "a123456",
+"cmd" : "ConfigAttendLogUploader",
+"payload" : {
+"target_uri" : "http://10.80.0.1/upload_log",
+"interval" : 60
+}
+}	{
+"mid" : "a123456",
+"result" : "Success",
+"payload" : {}
+}
+
+Request parameter description
+target_uri	The service address to which the attendance records will be uploaded.
+Interval	Attendance record upload interval (in seconds). Should be an integer between 5 and 3600.
+
+Attendance record reporting process
+Once configured, the device will first send an empty json object to the configured URI. The server should return the log position where the device should start sending, or an empty json object if no logs were received from the device.
+Request (Device Server)	Response (Server Device)
+{}	{
+"next_upload_pos": 50
+}
+
+After that, the device will start sending attendance logs periodically from this position. After receiving each request, the server will return the next upload position. Usually, it should be equal to the "next_pos" attribute in the request.
+Request (Device Server)	Response (Server Device)
+{
+"start_pos": 50 ,
+"next_pos": 100 ,
+"logs" : [
+{
+"user_id": "1",
+"time": "2020-04-01T08:10:05",
+"mode": "face "
+}
+    ...
+]
+}	{
+"next_upload_pos" : 100
+}
+
+All requests are sent with the HTTP POST method.
+GetAttendLogUploaderStatus
+Example
+request	response
+{
+  "mid" : "a123456",
+  "cmd" : "GetAttendLogUploaderStatus",
+  "payload" : {}
+}	{
+  "mid"     : "a123456",
+  "result"  : "AttendLogUploaderStatus",
+  "payload" : {
+    "status" : "active",
+    "pending_count" : 12
+  }
+}
+
+Response Parameter Description
+status	If the attendance log is being uploaded, it is "active" . Otherwise, it is "inactive" .
+pending_count	The number of attendance records stored in the device but not uploaded yet.
+
+ 
+Time Synchronization
+GetDeviceTime
+Get the device time.
+Example
+request	response
+{
+"mid" : "a123456",
+"cmd" : "GetDeviceTime",
+"payload" : {}
+}	{
+"mid" : "a123456",
+"result" : "DeviceTime",
+"payload" : {
+"time" : "2020-04-01T16:05:11"
+}
+}
+
+Response Parameter Description
+time	Current device time in iso8601 format.
+
+SetDeviceTime
+Set the device time.
+Example
+request	response
+{
+"mid" : "a123456",
+"cmd" : "SetDeviceTime",
+"payload" : {
+"time" : "2020-04-01T16:05:11"
+}
+}	{
+"mid" : "a123456",
+"result" : "Success",
+"payload" : {}
+}
+
+Request parameter description
+time	Set the time in iso8601 format.
+
+ 
+Device network configuration
+GetNetworkConfig
+Get the network configuration information of the device.
+Example
+request	response
+{
+"mid" : "a123456",
+  "cmd" : "GetNetworkConfig",
+  "payload" : {}
+}	{
+  "mid"     : "a123456",
+  "result"  : "NetworkConfig",
+  "payload" : {
+    "ethernet": {
+      "running": {
+        "address": "192.168.0.5",
+        "netmask": "255.255.255.0",
+        "gateway": "192.168.0.1",
+        "nameservers": [
+          "8.8.8.8",
+          "4.4.4.4"
+        ]
+      },
+      "config": {
+        "dhcp"   : "off",
+        "address": "192.168.0.5",
+        "netmask": "255.255.255.0",
+        "gateway": "192.168.0.1",
+        "nameservers": [
+          "8.8.8.8",
+          "4.4.4.4"
+        ]
+      }
+    },
+    "wlan": {
+      "running": {
+        "address": "10.242.1.9",
+        "netmask": "255.0.0.0",
+        "gateway": "10.0.0.2",
+        "nameservers": [
+          "10.0.0.2"
+        ]
+      },
+"config": {
+"dhcp": "on" ,
+"access_points": [
+{ "ssid": "AP1", "key": "1234" }
+...
+]
+}
+}
+}
+}
+
+Response Parameter Description
+ethernet	Wired network parameters and status. If the device does not support wired network, this parameter will not exist.
+  running	Current wired network status.
+    address	IP address.
+    netmask	Subnet mask.
+    gateway	Default gateway.
+    nameservers	DNS server address.
+  config	Wired network configuration information.
+    dhcp	"on" means the IP address is obtained dynamically via DHCP, otherwise "off".
+    address	Static IP address. This parameter is only valid if dhcp is set to "off".
+    netmask	Subnet mask. This parameter is only valid when dhcp is set to "off".
+    gateway	Default gateway. This parameter is only valid when dhcp is set to "off".
+    nameservers	DNS server addresses, up to 2. This parameter is only valid when dhcp is set to "off".
+wlan	Wifi parameters and status. If the device does not support Wifi , this parameter will not exist.
+  running	Current wifi status .
+    address	IP address.
+    netmask	Subnet mask.
+    gateway	Default gateway.
+    nameservers	DNS server address.
+  config	Wifi configuration information.
+    dhcp	"on" means the IP address is obtained dynamically via DHCP, otherwise "off".
+    address	Static IP address. This parameter is only valid if dhcp is set to "off".
+    netmask	Subnet mask. This parameter is only valid when dhcp is set to "off".
+    gateway	Default gateway. This parameter is only valid if dhcp is set to "off".
+    access_points	Configured Wi ifi access point.
+      ssid	Wi-Fi access point name.
+      key	Wifi password.
+
+SetNetworkConfig
+Set up the device network configuration.
+Example
+request	response
+{
+"mid" : "a123456",
+"cmd" : "SetNetworkConfig",
+"payload" : {
+"ethernet": {
+"dhcp": "off" ,
+      "address": "192.168.0.5",
+      "netmask": "255.255.255.0",
+      "gateway": "192.168.0.1",
+      "nameservers": [
+        "8.8.8.8",
+        "4.4.4.4"
+      ]
+    },
+    "wlan": {
+      "dhcp"   : "on",
+"access_points": [
+{ "ssid": "AP1", "key": "1234" }
+...
+]
+}
+}
+}	{
+"mid" : "a123456",
+"result" : "Success",
+"payload" : {}
+}
+
+Request parameter description
+ethernet	Wired network parameters and status. If the device does not support wired network, this parameter is ignored.
+  dhcp	"on" means the IP address is obtained dynamically via DHCP, otherwise "off".
+  address	Static IP address. This parameter is only valid if dhcp is set to "off".
+  netmask	Subnet mask. This parameter is only valid when dhcp is set to "off".
+  gateway	Default gateway. This parameter is only valid if dhcp is set to "off".
+  nameservers	DNS server addresses, up to 2. This parameter is only valid when dhcp is set to "off".
+wlan	Wifi parameters and status. If the device does not support Wifi , this parameter is ignored.
+  dhcp	"on" means the IP address is obtained dynamically via DHCP, otherwise "off".
+  address	Static IP address. This parameter is only valid if dhcp is set to "off".
+  netmask	Subnet mask. This parameter is only valid when dhcp is set to "off".
+  gateway	Default gateway. This parameter is only valid if dhcp is set to "off".
+  access_points	Configured Wi ifi access point.
+    ssid	Wi-Fi access point name.
+    key	Wifi password.
+
+ 
+Device information query and settings
+GetVersionInfo
+Get version information.
+Example
+request	response
+{
+"mid" : "a123456",
+"cmd" : "GetVersionInfo",
+"payload" : {}
+}	{
+"mid" : "a123456",
+"result" : "VersionInfo",
+"payload" : {
+"firmware_version": "13750C v3.11.802",
+"face_algorithm_version": "GreenFace v2.2",
+"fp_algorithm_version": "deli SMK v3.0"
+}
+}
+
+Response Parameter Description
+firmware_version	Firmware version.
+face_algorithm_version	Face algorithm version. If the device does not support face, this parameter will not exist.
+fp_algorithm_version	Fingerprint algorithm version. If the device does not support fingerprint, this parameter will not be present.
+
+GetCapacityLimit
+Get the capacity limit of the device.
+Example
+request	response
+{
+"mid" : "a123456",
+"cmd" : "GetCapacityLimit",
+"payload" : {}
+}	{
+"mid" : "a123456",
+"result" : "CapacityLimit",
+"payload" : {
+"max_user": 5000 ,
+"max_face": 3000 ,
+"max_fp" : 15000 ,
+"max_attend_log": 400000,
+"max_palm": 1000
+}
+}
+
+Response Parameter Description
+max_user	Maximum number of users.
+max_face	The maximum number of faces. If the device does not support faces, this parameter will not exist.
+max_fp	Maximum number of fingerprints. If the device does not support fingerprints, this parameter will not be present.
+max_attend_log	Maximum number of attendance records.
+max_palm	Maximum number of palms. If the device does not support palms, this parameter will not be present.
+
+GetChangeUserInfoOnDeviceAllowed
+Get the device's local editing user information switch setting.
+Example
+request	response
+{
+"mid" : "a123456",
+"cmd" : "GetChangeUserInfoOnDeviceAllowed",
+"payload" : {}
+}	{
+"mid" : "a123456",
+"result" : "ChangeUserInfoOnDeviceAllowed",
+"payload" : {
+"is_allowed": "yes"
+}
+}
+
+Response Parameter Description
+is_allowed	"yes" if local user information editing is allowed, otherwise "no" .
+
+SetChangeUserInfoOnDeviceAllowed
+Set the device to edit user information locally.
+Example
+request	response
+{
+"mid" : "a123456",
+"cmd" : "SetChangeUserInfoOnDeviceAllowed",
+"payload" : {
+"is_allowed": "yes"
+}
+}	{
+"mid" : "a123456",
+"result" : "Success",
+"payload" : {}
+}
+
+Request parameter description
+is_allowed	"yes" allows local user information editing, otherwise, "no".
+
+
+GetCurrentUsage
+Get the registration information of the device.
+Example
+request	response
+{
+  "mid" : "a123456",
+  "cmd" : "GetCurrentUsage",
+  "payload" : {}
+}	{
+  "mid"     : "a123456",
+  "result"  : "CurrentUsage",
+  "payload" : {
+    "attend_log_count": 26,
+    "card_count": 0,
+    "face_count": 1,
+    "fp_count": 1,
+    "manager_count": 0,
+    "palm_count": 1,
+    "password_count": 0,
+"user_count": 1
+  }
+}
+
+Parameter Description
+It’s obvious.
+
+GetDeviceUid
+Get the unique ID of the device.
+Example
+request	response
+{
+  "mid" : "a123456",
+  "cmd" : "GetDeviceUid",
+  "payload" : {}
+}	{
+  "mid"     : "a123456",
+  "result"  : "DeviceUid",
+  "payload" : {
+"device_uid": "e09c1d1fd6ac34a7"
+  }
+}
+
+Parameter Description
+device_uid	Unique ID of the device. 8-byte hexadecimal string.
+
+
+GetDeviceCapabilities
+Get the capabilities of the device.
+Example
+request	response
+{
+  "mid" : "a123456",
+  "cmd" : "GetDeviceCapabilities",
+  "payload" : {}
+}	{
+  "mid"     : "a123456",
+  "result"  : "DeviceCapabilities",
+  "payload" : {
+    "access_control": false,
+    "card": false,
+    "ethernet": true,
+    "face": true,
+    "fingerprint": true,
+    "input_device": true,
+    "palm": true,
+    "password": true,
+    "vrface": true,
+"wifi": true
+  }
+}
+
+Parameter Description
+vrface	Whether to support visible light face recognition.
+others	It’s obvious.
+
+GetBellSetting, SetBellSetting
+Get and write ring settings.
+Example
+request	response
+{
+  "mid" : "a123456",
+  "cmd" : "GetBellSetting",
+  "payload" : {}
+}	{
+  "mid"     : "a123456",
+  "result"  : "BellSetting",
+  "payload" : {
+    "bells": [
+      {
+        "duration_index": 6,
+        "start": "08:00",
+        "type_index": 0,
+        "weekmask": 62
+      },
+...
+24 ring settings
+  }
+}
+
+request	response
+{
+  "mid" : "a123456",
+  "cmd" : "SetBellSetting",
+"payload" : {
+    "bells": [
+      {
+        "duration_index": 6,
+        "start": "08:00",
+        "type_index": 0,
+        "weekmask": 62
+      },
+...
+24 ring settings
+}
+}	{
+  "mid"     : "a123456",
+  "result"  : "Success",
+  "payload" : {}
+}
+
+Parameter Description
+start	Ringing start time
+duration_index	Ringing interval
+                0 - "None",
+                1 - "3s",
+                2 - "5s",
+                3 - "10s",
+                4 - "15s",
+                5 - "20s",
+                6 - "30s",
+                7 - "45s",
+                8 - "1min"
+type_index	Type
+                0 - "Inside",
+                1 - "Outside",
+                2 - "In/Out"
+weekmask	Weekday bit mask
+                    Sun = bit 0,
+                    Mon = bit 1,
+                    Tue = bit 2,
+                    Wed = bit 3,
+                    Thu = bit 4,
+                    Fri = bit 5,
+                    Sat = bit 6
+
+GetDeviceId, SetDeviceId
+Get and write device id.
+Example
+request	response
+{
+  "mid" : "a123456",
+  "cmd" : "GetDeviceId",
+  "payload" : {}
+}	{
+  "mid"     : "a123456",
+  "result"  : "DeviceId",
+  "payload" : {
+"device_id": 1
+  }
+}
+
+request	response
+{
+  "mid" : "a123456",
+  "cmd" : "SetDeviceId",
+"payload" : {
+"device_id": 1
+}
+}	{
+  "mid"     : "a123456",
+  "result"  : "Success",
+  "payload" : {}
+}
+
+Parameter Description
+device_id	device id, 1~255
+
+GetSoundVolume, SetSoundVolume
+Get and write the device sound volume.
+Example
+request	response
+{
+  "mid" : "a123456",
+  "cmd" : "GetSoundVolume",
+  "payload" : {}
+}	{
+  "mid"     : "a123456",
+  "result"  : "SoundVolume",
+  "payload" : {
+"sound_volume": 1
+  }
+}
+
+request	response
+{
+  "mid" : "a123456",
+  "cmd" : "SetSoundVolume",
+"payload" : {
+"sound_volume": 1
+}
+}	{
+  "mid"     : "a123456",
+  "result"  : "Success",
+  "payload" : {}
+}
+
+Parameter Description
+sound_volume	device sound volume, 1~10
+
+GetReverifyTime, SetReverifyTime
+Get and write the invalid time of repeated attendance (reverify time).
+Example
+request	response
+{
+  "mid" : "a123456",
+  "cmd" : "GetReverifyTime",
+  "payload" : {}
+}	{
+  "mid"     : "a123456",
+  "result"  : "ReverifyTime",
+  "payload" : {
+"reverify_time": 1
+  }
+}
+
+request	response
+{
+  "mid" : "a123456",
+  "cmd" : "SetReverifyTime",
+"payload" : {
+"reverify_time": 1
+}
+}	{
+  "mid"     : "a123456",
+  "result"  : "Success",
+  "payload" : {}
+}
+
+Parameter Description
+reverify_time	the invalid time of repeated attendance (reverify time), 0~59 （minutes）
+
+
+GetVerifyMode, SetVerifyMode
+Get and write verification mode.
+Example
+request	response
+{
+  "mid" : "a123456",
+  "cmd" : "GetVerifyMode",
+  "payload" : {}
+}	{
+  "mid"     : "a123456",
+  "result"  : "VerifyMode",
+  "payload" : {
+"verify_mode": 1
+  }
+}
+
+request	response
+{
+  "mid" : "a123456",
+  "cmd" : "SetVerifyMode",
+"payload" : {
+"verify_mode": 1
+}
+}	{
+  "mid"     : "a123456",
+  "result"  : "Success",
+  "payload" : {}
+}
+
+Parameter Description
+verify_mode	verification mode
+           0 - "Any",
+           1 - "Finger",
+           2 - "Card + Finger",
+           3 - "Card",
+           4 - "Id + Finger",
+           5 - "Id + Password",
+           6 - "Card + Password",
+           7 - "Finger + Password",
+           8 - "Finger + Card + Password",
+           9 - "Face",
+           10 - "Card + Face",
+           11 - "Face + Password",
+           12 - "Face + Card + Password",
+           13 - "Face + Finger",
+           14 - "Face + Finger + Card",
+           15 - "Face + Finger + Password",
+When writing, if the device does not support the mode, an error is returned.
+
+GetFaceVerifySetting, SetFaceVerifySetting
+Get and write face recognition settings.
+Example
+request	response
+{
+  "mid" : "a123456",
+  "cmd" : "GetFaceVerifySetting",
+  "payload" : {}
+}	{
+  "mid"     : "a123456",
+  "result"  : "FaceVerifySetting",
+  "payload" : {
+"antispoofing_thre": 2,
+"multi_veri_enabled": true,
+"use_antispoofing": true
+  }
+}
+
+request	response
+{
+  "mid" : "a123456",
+  "cmd" : "SetFaceVerifySetting",
+"payload" : {
+"antispoofing_thre": 2,
+"multi_veri_enabled": true,
+"use_antispoofing": true
+}
+}	{
+  "mid"     : "a123456",
+  "result"  : "Success",
+  "payload" : {}
+}
+
+Parameter Description
+use_antispoofing	Liveness detection switch
+antispoofing_thre	Liveness detection threshold
+           0 - "Lower",
+           1 - "Low",
+           2 - "Normal",
+           3 - "High",
+           4 - "Higher"，
+multi_veri_enabled	Multi-face detection switch
+
+
+DeviceControl
+Control the device.
+Example
+request	response
+{
+  "mid" : "a123456",
+  "cmd" : "DeviceControl",
+"payload" : {
+  "Action": "ClearAttendLog"
+}
+}	{
+  "mid"     : "a123456",
+  "result"  : "Success",
+  "payload" : {}
+}
+
+Parameter Description
+Action	Clear attendance records - "ClearAttendLog"
+Clear management records - "ClearAdminLog"
+Clear users - "ClearUsers"
+Clear managers - "ClearAdmins"
+Clear all data - "ClearAllData"
+
+Shift settings and user shift settings
+
+GetShiftMode, SetShiftMode
+Get and write the shift scheduling mode.
+Example
+request	response
+{
+  "mid" : "a123456",
+  "cmd" : "GetShiftMode",
+  "payload" : {}
+}	{
+  "mid"     : "a123456",
+  "result"  : "ShiftMode",
+  "payload" : {
+"shift_mode": "user"
+  }
+}
+
+request	response
+{
+  "mid" : "a123456",
+  "cmd" : "SetShiftMode",
+"payload" : {
+"shift_mode": "user"
+}
+}	{
+  "mid"     : "a123456",
+  "result"  : "Success",
+  "payload" : {}
+}
+
+Parameter Description
+shift_mode	User shift mode - "User",
+Department shift mode - "Department"
+
+
+GetAttendaceTolerance, SetAttendaceTolerance
+Get and write attendance statistics parameters.
+Example
+request	response
+{
+  "mid" : "a123456",
+  "cmd" : "GetAttendaceTolerance",
+  "payload" : {}
+}	{
+  "mid"     : "a123456",
+  "result"  : "AttendaceTolerance",
+  "payload" : {
+"afternoon_in_tolerance": 0,
+"afternoon_out_tolerance": 0,
+"morning_in_tolerance": 0,
+"morning_out_tolerance": 0
+  }
+}
+
+request	response
+{
+  "mid" : "a123456",
+  "cmd" : "SetAttendaceTolerance",
+"payload" : {
+"afternoon_in_tolerance": 0,
+"afternoon_out_tolerance": 0,
+"morning_in_tolerance": 0,
+"morning_out_tolerance": 0
+}
+}	{
+  "mid"     : "a123456",
+  "result"  : "Success",
+  "payload" : {}
+}
+
+Parameter Description
+morning_in_tolerance
+afternoon_in_tolerance	How many minutes late is recorded as late for work?， 0~120（minutes）
+morning_out_tolerance
+afternoon_out_tolerance	How many minutes early should I leave work?， 0~120（minutes）
+
+
+GetShiftSetting, SetShiftSetting
+Get and write shift settings.
+Example
+request	response
+{
+  "mid" : "a123456",
+  "cmd" : "GetShiftSetting",
+  "payload" : {}
+}	{
+  "mid"     : "a123456",
+  "result"  : "ShiftSetting",
+  "payload" : {
+    "shifts": [
+      [
+        {
+          "end": "12:00",
+          "start": "09:00"
+        },
+        {
+          "end": "18:00",
+          "start": "13:00"
+        },
+        {
+          "end": "",
+          "start": ""
+        }
+      ],
+...
+24 shifts
+  }
+}
+
+request	response
+{
+  "mid" : "a123456",
+  "cmd" : "SetShiftSetting",
+"payload" : {
+    "shifts": [
+      [
+        {
+          "end": "12:00",
+          "start": "09:00"
+        },
+        {
+          "end": "18:00",
+          "start": "13:00"
+        },
+        {
+          "end": "",
+          "start": ""
+        }
+      ],
+...
+24 shifts
+}
+}	{
+  "mid"     : "a123456",
+  "result"  : "Success",
+  "payload" : {}
+}
+
+Parameter Description
+There are 24 shifts in total, each with 3 time periods, each with a start time and an end time.
+The start time and the end time can be empty. The validity evaluation of the shift setting is performed in the device. If it is invalid during writing, an error is returned.
+
+GetUserShift, SetUserShift
+Get and write user shift settings.
+Example
+request	response
+{
+  "mid" : "a123456",
+  "cmd" : "GetUserShift",
+"payload" :
+  {
+    "id": "1"
+  }
+}	{
+  "mid"     : "a123456",
+  "result"  : "UserShift",
+"payload" : {
+  "id": "1",
+"shift_start_day": "2024-11-13T00:00:00",
+ "shift": [
+      0,
+...
+100-day shift schedule
+  }
+}
+
+request	response
+{
+  "mid" : "a123456",
+  "cmd" : "SetUserShift",
+"payload" : {
+    "shift_start_day": "2024-11-13T00:00:00",
+ "shift": [
+      0,
+...
+100-day shift schedule
+}
+}	{
+  "mid"     : "a123456",
+  "result"  : "Success",
+  "payload" : {}
+}
+
+Parameter Description
+id	User ID.
+shift_start_day	For the shift start time, please check the demo source code.
+shift	100-day shift schedule
+0~23: One of 24 shifts
+24: Business trip
+25: Leave
+100: Holiday
+Please check the demo source code.
+
+
+Access control settings
+
+GetAcTimeZone, SetAcTimeZone
+Get and write access control time zone settings.
+Example
+request	response
+{
+  "mid" : "a123456",
+  "cmd" : "GetAcTimeZone",
+  "payload" : {}
+}	{
+  "mid"     : "a123456",
+  "result"  : "AcTimeZone",
+  "payload" : {
+    "zones": [
+      [
+        {
+         "end": "23:59",
+         "start": "00:00"
+        },
+...
+6 time ranges within a day
+      ]
+...
+A total of 255 days
+  }
+}
+
+request	response
+{
+  "mid" : "a123456",
+  "cmd" : "SetAcTimeZone",
+"payload" : {
+    "zones": [
+      [
+        {
+         "end": "23:59",
+         "start": "00:00"
+        },
+...
+6 time ranges within a day
+      ]
+...
+A total of 255 days
+}
+}	{
+  "mid"     : "a123456",
+  "result"  : "Success",
+  "payload" : {}
+}
+
+Parameter Description
+There are a total of 255 days’ time zones, with 6 time ranges per day.
+
+GetAcUserInfo, SetAcUserInfo
+Get and write user access control settings.
+Example
+request	response
+{
+  "mid" : "a123456",
+  "cmd" : "GetAcUserInfo",
+"payload" :
+  {
+    "id": "1"
+  }
+}	{
+  "mid"     : "a123456",
+  "result"  : "AcUserInfo",
+"payload" : {
+    "id": "1",
+    "time_zone": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "valid_period": {
+      "end": "2000-01-01T00:00:00",
+      "start": "2000-01-01T00:00:00",
+      "use": false
+}
+  }
+}
+
+request	response
+{
+  "mid" : "a123456",
+  "cmd" : "SetAcUserInfo",
+"payload" : {
+    "id": "1",
+    "time_zone": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "valid_period": {
+      "use": false,
+      "start": "2025-01-24T18:48:22",
+      "end": "2025-01-24T18:48:22"
+    }
+ }
+}	{
+  "mid"     : "a123456",
+  "result"  : "Success",
+  "payload" : {}
+}
+
+Parameter Description
+id	User ID.
+time_zone	The user's time zone number for a week. （0~254）
+valid_period	Valid period. This function only takes effect when [use = true].
+
+
+GetAcSetting, SetAcSetting
+Get and write access control settings.
+Example
+request	response
+{
+  "mid" : "a123456",
+  "cmd" : "GetAcSetting",
+  "payload" : {}
+}	{
+  "mid"     : "a123456",
+  "result"  : "AcSetting",
+  "payload" : {
+    "monitor_tamper": false,
+    "multi_verify_count": 1,
+    "unlock_time": 5,
+"wiegand_format": 0
+  }
+}
+
+request	response
+{
+  "mid" : "a123456",
+  "cmd" : "SetAcSetting",
+"payload" : {
+    "monitor_tamper": false,
+    "multi_verify_count": 1,
+    "unlock_time": 5,
+"wiegand_format": 0
+}
+}	{
+  "mid"     : "a123456",
+  "result"  : "Success",
+  "payload" : {}
+}
+
+Parameter Description
+monitor_tamper	Anti-tamper alarm switch
+multi_verify_count	Confirmed number at the same time (Muti Verify Count)
+unlock_time	Door opening delay, 0~200 seconds
+wiegand_format	Wiegand output format
+0 - "None", 
+1 - "Wiegand 26",
+2 - "Wiegand 34"，
+
+
+Department Management
+
+GetDeptList
+Get department information.
+Example
+request	response
+{
+  "mid" : "a123456",
+  "cmd" : "GetDeptList",
+  "payload" : {}
+}	{
+  "mid"     : "a123456",
+  "result"  : "DeptList",
+  "payload" : {
+      {
+        "name": "Company",
+        "shift": [
+          100,
+          0,
+          0,
+          0,
+          0,
+          0,
+          100
+        ],
+        "user_count": 1
+      },
+...
+Up to 100 departments
+  }
+}
+
+Parameter Description
+name	Department Name
+shift	Department's 1-week shift schedule
+0~23: One of 24 shifts
+24: Business trip
+25: Leave
+100: Holiday
+Please check the demo source code.
+user_count	Number of users
+
+
+SetDept
+Department Operations.
+Example
+request	response
+{
+  "mid" : "a123456",
+  "cmd" : "SetDept",
+"payload" :
+  {
+    "Action": "Rename",
+    "dept_org": "Company",
+    "dept_new": "NewName",
+    "shift": [
+      100,
+      0,
+      0,
+      0,
+      0,
+      0,
+      100
+    ]
+  }
+}	{
+  "mid"     : "a123456",
+  "result"  : "Success",
+  "payload" : {}
+}
+
+
+Parameter Description
+Action	Operation types
+"Rearrange": rearrange, no other parameters
+"Check": confirm existence, use dept_org
+"Add": add, use dept_new, optional shift
+"Delete": delete, use dept_org
+"Rename": rename, use dept_org and dept_new, optional shift
+"SetShift": configure shifts, use dept_org and shift
+See the demo source code.
+dept_org	Original department name
+dept_new	New department name
+shift	Department's 1-week shift schedule
+0~23: One of 24 shifts
+24: Business trip
+25: Leave
+100: Holiday
+Please check the demo source code.
+
+
+

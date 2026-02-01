@@ -1,0 +1,28 @@
+[
+  {
+    "id": "1",
+    "username": "chana19",
+    "password": "chana19",
+    "name": "Admin (Chana)",
+    "role": "Admin",
+    "isActive": true
+  },
+  {
+    "role": "User",
+    "isActive": true,
+    "username": "act123",
+    "password": "act123",
+    "name": "Act",
+    "permissions": [
+      "kanban",
+      "products",
+      "stock",
+      "reports",
+      "customers",
+      "devices",
+      "attendance"
+    ],
+    "id": "1769957110968",
+    "lastLogin": "2026-02-01T14:45:18.837Z"
+  }
+]
