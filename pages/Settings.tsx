@@ -4,7 +4,7 @@ import { useInventory } from '../contexts/InventoryContext';
 import { Save, Download, Upload, Lock, Shield, Globe, Users, Trash2, Plus, Edit } from 'lucide-react';
 import { UserRole, User, PERMISSIONS } from '../types';
 
-const SERVER_URL = 'http://localhost:3001/api';
+const SERVER_URL = '/api';
 
 const Settings = () => {
     const { t, language, setLanguage } = useLanguage();

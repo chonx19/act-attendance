@@ -138,7 +138,7 @@ const Devices = () => {
                     <div className="text-sm font-bold text-gray-400 uppercase">Server Status</div>
                     <div className={`text-lg font-mono font-bold ${serverIp.includes('Running') ? 'text-red-500' : 'text-green-500'} flex items-center justify-end gap-2`}>
                         {serverIp.includes('Running') ? <WifiOff className="w-4 h-4" /> : <Wifi className="w-4 h-4" />}
-                        {serverIp !== 'Server Not Running' ? `http://${serverIp}:3001` : 'Offline'}
+                        {serverIp !== 'Server Not Running' ? `http://${window.location.hostname}:3001` : 'Offline'}
                     </div>
                 </div>
             </div>
