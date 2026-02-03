@@ -405,7 +405,13 @@ const Devices = () => {
                                 const payloadInput = (document.getElementById('customPayload') as HTMLTextAreaElement).value;
 
                                 try {
-                                    const payloadJson = JSON.parse(payloadInput);
+                                    let payloadJson = {};
+                                    try {
+                                        payloadJson = JSON.parse(payloadInput || '{}');
+                                    } catch (err) {
+                                        alert('Invalid JSON in Payload field');
+                                        return;
+                                    }
 
                                     const requestBody = {
                                         deviceIp: dev.ip,
@@ -433,7 +439,8 @@ const Devices = () => {
                                         response: data
                                     }));
                                 } catch (e) {
-                                    alert('Invalid JSON Payload or Connection Error');
+                                    console.error(e);
+                                    alert(`Error: ${e instanceof Error ? e.message : 'Invalid JSON or Connection Failed'}`);
                                 }
                             }}
                             className="w-full py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-bold shadow-md"

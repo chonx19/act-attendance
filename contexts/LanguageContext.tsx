@@ -11,6 +11,7 @@ const translations = {
     dailyReport: 'Daily Attendance Report',
     rangeReport: 'Range Summary',
     employee: 'Employee',
+    position: 'Position',
     checkIn: 'Check In',
     checkOut: 'Check Out',
     status: 'Status',
@@ -75,6 +76,7 @@ const translations = {
     prod_search_ph: 'Search by Name, Code, or Barcode...',
     prod_all_locations: 'All Locations',
     prod_all_suppliers: 'All Suppliers',
+    prod_new: 'Add Product',
     // Kanban
     kb_status_rfq: 'RFQ',
     kb_status_quotation: 'Quotation',
@@ -121,6 +123,7 @@ const translations = {
     dailyReport: 'รายงานประจำวัน',
     rangeReport: 'สรุปรายช่วงเวลา',
     employee: 'พนักงาน',
+    position: 'ตำแหน่ง',
     checkIn: 'เวลาเข้า',
     checkOut: 'เวลาออก',
     status: 'สถานะ',
@@ -185,6 +188,7 @@ const translations = {
     prod_search_ph: 'ค้นหาด้วยชื่อ, รหัส หรือบาร์โค้ด...',
     prod_all_locations: 'ทุกสถานที่เก็บ',
     prod_all_suppliers: 'ทุกผู้จำหน่าย',
+    prod_new: 'เพิ่มสินค้า',
     // Kanban
     kb_status_rfq: 'ขอใบเสนอราคา (RFQ)',
     kb_status_quotation: 'เสนอราคา (Quotation)',
@@ -235,7 +239,7 @@ interface LanguageContextType {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [language, setLanguage] = useState<Language>('en'); // Default to English
+  const [language, setLanguage] = useState<Language>('th'); // Default to Thai
 
   useEffect(() => {
     const saved = localStorage.getItem('app_language') as Language;

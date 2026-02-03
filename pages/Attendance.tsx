@@ -481,6 +481,7 @@ const Attendance = () => {
                         <thead>
                             <tr className="bg-gray-50 dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700 text-xs uppercase text-gray-500">
                                 <th className="p-4">{t('employee')}</th>
+                                <th className="p-4">{t('position')}</th>
                                 {exportMode === 'daily' ? (
                                     <>
                                         <th className="p-4 text-center">{t('checkIn')}</th>
@@ -506,6 +507,9 @@ const Attendance = () => {
                                             <div className="font-bold dark:text-white">{r.name}</div>
                                             <div className="text-xs text-gray-400">ID: {r.userId}</div>
                                         </td>
+                                        <td className="p-4 text-sm text-gray-600 dark:text-gray-300">
+                                            {users.find(u => u.id === r.userId)?.position || '-'}
+                                        </td>
                                         <td className={`p-4 text-center font-mono ${r.lateMinutes > 0 ? 'text-red-500 font-bold' : ''}`}>{r.checkIn || '-'}</td>
                                         <td className="p-4 text-center font-mono">{r.checkOut || '-'}</td>
                                         <td className="p-4 text-center"><span className={`px-2 py-1 rounded text-xs font-bold ${r.status === 'Normal' ? 'bg-green-100 text-green-700' : r.status === 'Late' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-500'}`}>{t(r.status.toLowerCase() as any) || r.status}</span></td>
@@ -523,6 +527,9 @@ const Attendance = () => {
                                         <td className="p-4">
                                             <div className="font-bold dark:text-white">{s.name}</div>
                                             <div className="text-xs text-gray-400">ID: {s.id}</div>
+                                        </td>
+                                        <td className="p-4 text-sm text-gray-600 dark:text-gray-300">
+                                            {users.find(u => u.id === s.id)?.position || '-'}
                                         </td>
                                         <td className="p-4 text-center font-bold text-green-600">{s.present}</td>
                                         <td className="p-4 text-center font-bold text-red-500">{s.late}</td>

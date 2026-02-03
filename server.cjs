@@ -233,11 +233,17 @@ app.post('/api/proxy-device', async (req, res) => {
 
     try {
         console.log(`[Proxy] Sending to ${url}:`, JSON.stringify(requestBody));
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s Timeout
+
+        console.log(`[Proxy] Sending to ${url}:`, JSON.stringify(requestBody));
         const response = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(requestBody)
+            body: JSON.stringify(requestBody),
+            signal: controller.signal
         });
+        clearTimeout(timeoutId);
         const text = await response.text();
         try {
             const responseData = JSON.parse(text);

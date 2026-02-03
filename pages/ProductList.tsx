@@ -182,7 +182,7 @@ const ProductList = () => {
             </>
           )}
           <button onClick={() => handleOpenModal()} className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 shadow-sm">
-            <Plus className="w-5 h-5 mr-2" /> {t('kb_new')}
+            <Plus className="w-5 h-5 mr-2" /> {t('prod_new')}
           </button>
         </div>
       </div>
@@ -354,7 +354,7 @@ const ProductList = () => {
                 </div>
                 {/* ... Other inputs ... */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">รหัสสินค้า (Code)</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">รหัสสินค้า (ACT Code)</label>
                   <input required type="text" value={formData.productCode} onChange={e => setFormData({ ...formData, productCode: e.target.value })} className="w-full border-gray-300 dark:border-slate-600 rounded-lg shadow-sm border p-2 bg-white dark:bg-slate-900 dark:text-white" />
                 </div>
                 <div>
@@ -371,7 +371,7 @@ const ProductList = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">ราคาขาย (Price)</label>
-                  <input required type="number" step="0.01" value={formData.price} onChange={e => setFormData({ ...formData, price: parseFloat(e.target.value) })} className="w-full border-gray-300 dark:border-slate-600 rounded-lg shadow-sm border p-2 bg-white dark:bg-slate-900 dark:text-white" />
+                  <input type="number" step="0.01" value={formData.price} onChange={e => setFormData({ ...formData, price: parseFloat(e.target.value) })} className="w-full border-gray-300 dark:border-slate-600 rounded-lg shadow-sm border p-2 bg-white dark:bg-slate-900 dark:text-white" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">น้ำหนัก (g)</label>
