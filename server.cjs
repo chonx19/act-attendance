@@ -12,6 +12,8 @@ const app = express();
 const PORT = process.env.PORT || 3001; // Use Cloud PORT or 3001 locally
 
 // Middleware
+app.set('trust proxy', 1); // Trust first proxy (important for Render/Cloud)
+
 app.use(cors());
 app.use(helmet({
     contentSecurityPolicy: false, // Convert to false for now to avoid breaking inline scripts/images
@@ -19,7 +21,7 @@ app.use(helmet({
 
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // Limit each IP to 100 requests per windowMs
+    max: 1000, // Relaxed limit to 1000 requests per 15 min
     standardHeaders: true,
     legacyHeaders: false,
 });
