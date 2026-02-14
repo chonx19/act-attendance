@@ -75,6 +75,9 @@ const translations = {
     dash_chart_title: 'Monthly Purchase Orders',
     dash_chart_axis_y: 'Number of Orders',
     dash_chart_tooltip: 'Orders',
+    dash_active_jobs: 'Active Jobs',
+    dash_no_activity: 'No recent activity',
+    dash_view_all: 'View All',
     // Products
     prod_search_ph: 'Search by Name, Code, or Barcode...',
     prod_all_locations: 'All Locations',
@@ -190,6 +193,9 @@ const translations = {
     dash_chart_title: 'คำสั่งซื้อรายเดือน',
     dash_chart_axis_y: 'จำนวนคำสั่งซื้อ',
     dash_chart_tooltip: 'รายการ',
+    dash_active_jobs: 'งานที่กำลังดำเนินการ',
+    dash_no_activity: 'ไม่มีกิจกรรมล่าสุด',
+    dash_view_all: 'ดูทั้งหมด',
     // Products
     prod_search_ph: 'ค้นหาด้วยชื่อ, รหัส หรือบาร์โค้ด...',
     prod_all_locations: 'ทุกสถานที่เก็บ',
