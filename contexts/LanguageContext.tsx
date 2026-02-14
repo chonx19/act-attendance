@@ -72,6 +72,9 @@ const translations = {
     dash_total_value: 'Total Value',
     dash_recent_activity: 'Recent Activity',
     dash_subtitle: 'Overview of system performance and stock status',
+    dash_chart_title: 'Monthly Purchase Orders',
+    dash_chart_axis_y: 'Number of Orders',
+    dash_chart_tooltip: 'Orders',
     // Products
     prod_search_ph: 'Search by Name, Code, or Barcode...',
     prod_all_locations: 'All Locations',
@@ -184,6 +187,9 @@ const translations = {
     dash_total_value: 'มูลค่ารวม',
     dash_recent_activity: 'กิจกรรมล่าสุด',
     dash_subtitle: 'ภาพรวมระบบและสถานะสต็อกสินค้า',
+    dash_chart_title: 'คำสั่งซื้อรายเดือน',
+    dash_chart_axis_y: 'จำนวนคำสั่งซื้อ',
+    dash_chart_tooltip: 'รายการ',
     // Products
     prod_search_ph: 'ค้นหาด้วยชื่อ, รหัส หรือบาร์โค้ด...',
     prod_all_locations: 'ทุกสถานที่เก็บ',

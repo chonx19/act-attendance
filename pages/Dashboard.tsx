@@ -29,12 +29,12 @@ const Dashboard = () => {
   const { user } = useAuth();
   const { t } = useLanguage();
   const { theme } = useTheme();
-  
+
   const stats = getDashboardStats();
 
   // Redirect Customers to Contact page if they access Dashboard directly
   if (user?.role === UserRole.CUSTOMER) {
-      return <Navigate to="/app/contact" replace />;
+    return <Navigate to="/app/contact" replace />;
   }
 
   const isAdmin = user?.role === UserRole.ADMIN;
@@ -48,21 +48,21 @@ const Dashboard = () => {
   // Calculate Monthly Stats for Chart
   const monthlyData = useMemo(() => {
     const data: Record<string, { month: string; count: number; total: number; rawDate: number }> = {};
-    
+
     purchaseOrders.forEach(po => {
       // Use startDate or fallback to creation (id is timestamp string)
       const dateStr = po.startDate || (Number(po.id) ? new Date(Number(po.id)).toISOString() : new Date().toISOString());
       const date = new Date(dateStr);
-      
+
       if (isNaN(date.getTime())) return;
-      
+
       const key = `${date.getFullYear()}-${date.getMonth()}`;
       const label = date.toLocaleDateString(t('company_name_short') === 'ACT & R' ? 'th-TH' : 'en-US', { month: 'short', year: '2-digit' });
-      
+
       if (!data[key]) {
         data[key] = { month: label, count: 0, total: 0, rawDate: date.getTime() };
       }
-      
+
       data[key].count += 1;
       data[key].total += (po.totalAmount || 0);
     });
@@ -74,10 +74,10 @@ const Dashboard = () => {
   }, [purchaseOrders, t]);
 
   const chartColors = {
-     text: theme === 'dark' ? '#94a3b8' : '#64748b',
-     grid: theme === 'dark' ? '#334155' : '#f1f5f9',
-     tooltipBg: theme === 'dark' ? '#1e293b' : '#ffffff',
-     tooltipText: theme === 'dark' ? '#f8fafc' : '#0f172a'
+    text: theme === 'dark' ? '#94a3b8' : '#64748b',
+    grid: theme === 'dark' ? '#334155' : '#f1f5f9',
+    tooltipBg: theme === 'dark' ? '#1e293b' : '#ffffff',
+    tooltipText: theme === 'dark' ? '#f8fafc' : '#0f172a'
   };
 
   // Employee Dashboard
@@ -100,74 +100,74 @@ const Dashboard = () => {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <StatCard 
+        <StatCard
           title={t('dash_total_products')}
-          value={stats.totalProducts} 
-          icon={Package} 
-          color={{ bg: 'bg-blue-100 dark:bg-blue-900/20', text: 'text-blue-600 dark:text-blue-400' }} 
+          value={stats.totalProducts}
+          icon={Package}
+          color={{ bg: 'bg-blue-100 dark:bg-blue-900/20', text: 'text-blue-600 dark:text-blue-400' }}
         />
-        <StatCard 
-          title={t('dash_active_jobs')} 
-          value={activePOs} 
-          icon={Trello} 
-          color={{ bg: 'bg-orange-100 dark:bg-orange-900/20', text: 'text-orange-600 dark:text-orange-400' }} 
+        <StatCard
+          title={t('dash_active_jobs')}
+          value={activePOs}
+          icon={Trello}
+          color={{ bg: 'bg-orange-100 dark:bg-orange-900/20', text: 'text-orange-600 dark:text-orange-400' }}
         />
       </div>
 
       {/* Monthly Progress Chart */}
       <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700">
         <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-bold text-gray-800 dark:text-white flex items-center">
-                <BarChart3 className="w-5 h-5 mr-2 text-blue-600 dark:text-blue-400"/> 
-                {t('dash_chart_title')}
-            </h3>
+          <h3 className="text-lg font-bold text-gray-800 dark:text-white flex items-center">
+            <BarChart3 className="w-5 h-5 mr-2 text-blue-600 dark:text-blue-400" />
+            {t('dash_chart_title')}
+          </h3>
         </div>
         <div className="w-full h-[350px] min-w-0" style={{ minHeight: '350px' }}>
-            <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={monthlyData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={chartColors.grid} />
-                    <XAxis 
-                        dataKey="month" 
-                        axisLine={false} 
-                        tickLine={false} 
-                        tick={{fill: chartColors.text, fontSize: 12}} 
-                        dy={10} 
-                    />
-                    <YAxis 
-                        yAxisId="left" 
-                        orientation="left" 
-                        axisLine={false} 
-                        tickLine={false} 
-                        tick={{fill: chartColors.text, fontSize: 12}}
-                        label={{ value: t('dash_chart_axis_y'), angle: -90, position: 'insideLeft', style: { fill: chartColors.text, fontSize: 12 } }} 
-                    />
-                    
-                    <Tooltip 
-                        cursor={{ fill: theme === 'dark' ? '#334155' : '#f8fafc' }}
-                        contentStyle={{ 
-                            borderRadius: '8px', 
-                            border: 'none', 
-                            boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
-                            backgroundColor: chartColors.tooltipBg,
-                            color: chartColors.tooltipText
-                        }}
-                        formatter={(value: number, name: string) => {
-                            if (name === 'count') return [value, t('dash_chart_axis_y')];
-                            return [value, name];
-                        }}
-                    />
-                    <Legend wrapperStyle={{ paddingTop: '20px' }} iconType="circle" />
-                    
-                    <Bar 
-                        yAxisId="left" 
-                        dataKey="count" 
-                        name={t('dash_chart_axis_y')}
-                        fill="#3b82f6" 
-                        radius={[4, 4, 0, 0]} 
-                        barSize={isAdmin ? 20 : 40}
-                    />
-                </BarChart>
-            </ResponsiveContainer>
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={monthlyData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={chartColors.grid} />
+              <XAxis
+                dataKey="month"
+                axisLine={false}
+                tickLine={false}
+                tick={{ fill: chartColors.text, fontSize: 12 }}
+                dy={10}
+              />
+              <YAxis
+                yAxisId="left"
+                orientation="left"
+                axisLine={false}
+                tickLine={false}
+                tick={{ fill: chartColors.text, fontSize: 12 }}
+                label={{ value: t('dash_chart_axis_y'), angle: -90, position: 'insideLeft', style: { fill: chartColors.text, fontSize: 12 } }}
+              />
+
+              <Tooltip
+                cursor={{ fill: theme === 'dark' ? '#334155' : '#f8fafc' }}
+                contentStyle={{
+                  borderRadius: '8px',
+                  border: 'none',
+                  boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                  backgroundColor: chartColors.tooltipBg,
+                  color: chartColors.tooltipText
+                }}
+                formatter={(value: number, name: string) => {
+                  if (name === 'count' || name === t('dash_chart_axis_y')) return [value, t('dash_chart_tooltip') || 'Orders'];
+                  return [value, name];
+                }}
+              />
+              <Legend wrapperStyle={{ paddingTop: '20px' }} iconType="circle" />
+
+              <Bar
+                yAxisId="left"
+                dataKey="count"
+                name={t('dash_chart_axis_y')}
+                fill="#3b82f6"
+                radius={[4, 4, 0, 0]}
+                barSize={isAdmin ? 20 : 40}
+              />
+            </BarChart>
+          </ResponsiveContainer>
         </div>
       </div>
 
@@ -186,9 +186,9 @@ const Dashboard = () => {
                     <div className="flex items-center gap-3">
                       <div className={`
                         w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs
-                        ${tx.type === 'รับเข้า' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' : 
-                          tx.type === 'เบิกออก' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300' : 
-                          'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'}
+                        ${tx.type === 'รับเข้า' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' :
+                          tx.type === 'เบิกออก' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300' :
+                            'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'}
                       `}>
                         {tx.type === 'รับเข้า' ? 'IN' : tx.type === 'เบิกออก' ? 'OUT' : 'ADJ'}
                       </div>
