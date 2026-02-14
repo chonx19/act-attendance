@@ -4,6 +4,8 @@ const bodyParser = require('body-parser');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 const mongoose = require('mongoose');
 
 const app = express();
@@ -11,6 +13,19 @@ const PORT = process.env.PORT || 3001; // Use Cloud PORT or 3001 locally
 
 // Middleware
 app.use(cors());
+app.use(helmet({
+    contentSecurityPolicy: false, // Convert to false for now to avoid breaking inline scripts/images
+}));
+
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // Limit each IP to 100 requests per windowMs
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+// Apply rate limiting to all requests
+app.use(limiter);
+
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
@@ -272,7 +287,66 @@ app.get('/api/attendance', async (req, res) => {
 
 // 5. User Management
 app.get('/api/users', async (req, res) => {
-    res.json(await getData(USERS_FILE));
+    const users = await getData(USERS_FILE);
+    // Sanitize: Remove passwords
+    const safeUsers = users.map(u => {
+        const { password, ...rest } = u;
+        return rest;
+    });
+    res.json(safeUsers);
+});
+
+// Secure Login Endpoint
+app.post('/api/login', async (req, res) => {
+    const { username, password, clientIp } = req.body;
+
+    // 1. IP Whitelist Check
+    const whitelist = await getData('whitelist.json');
+    if (whitelist && whitelist.length > 0) {
+        const allowed = whitelist.some(w => w.ip === clientIp || w.ip === '0.0.0.0');
+        if (!allowed) {
+            return res.status(403).json({ error: `Access Denied: Your IP (${clientIp}) is not whitelisted.` });
+        }
+    }
+
+    // 2. Credential Check
+    const users = await getData(USERS_FILE);
+    const user = users.find(u => u.username === username && u.password === password);
+
+    if (user) {
+        if (!user.isActive) return res.status(403).json({ error: 'Account Disabled' });
+
+        // Update Last Login
+        user.lastLogin = new Date().toISOString();
+        // Save back to file/db (including password, but we don't return it)
+        // We need to find index in the original array to update
+        const index = users.findIndex(u => u.id === user.id);
+        if (index !== -1) {
+            users[index] = user;
+            await saveData(USERS_FILE, users);
+        }
+
+        // Sanitize for response
+        const { password: _, ...safeUser } = user;
+
+        // 3. Log Session
+        const sessions = await getData('sessions.json');
+        const newSession = {
+            id: Date.now().toString(),
+            userId: user.id,
+            userName: user.name,
+            ipAddress: clientIp,
+            userAgent: req.headers['user-agent'] || 'Unknown',
+            loginTime: new Date().toISOString()
+        };
+        // Keep last 50
+        const updatedSessions = [newSession, ...sessions].slice(0, 50);
+        await saveData('sessions.json', updatedSessions);
+
+        return res.json({ success: true, user: safeUser });
+    }
+
+    return res.status(401).json({ error: 'Invalid username or password' });
 });
 
 // 5b. Employee Management

@@ -1,6 +1,6 @@
 
 import React, { useEffect } from 'react';
-import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { storageService } from './services/storageService';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { InventoryProvider } from './contexts/InventoryContext';
@@ -76,7 +76,7 @@ const App = () => {
   }, []);
 
   return (
-    <HashRouter>
+    <BrowserRouter>
       <ThemeProvider>
         <LanguageProvider>
           <AuthProvider>
@@ -121,7 +121,7 @@ const App = () => {
           </AuthProvider>
         </LanguageProvider>
       </ThemeProvider>
-    </HashRouter>
+    </BrowserRouter>
   );
 };
 

@@ -325,37 +325,37 @@ export const storageService = {
 
   // --- Login ---
   login: async (username: string, password: string, clientIp: string): Promise<User | null> => {
-    await storageService.fetchUpdates(); // Ensure fresh users
+    try {
+      const res = await fetch(`${API_URL}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password, clientIp })
+      });
 
-    // Fail-Safe: If server returns empty users (fresh install or error), use Initial Users
-    if (cache.users.length === 0) {
-      console.warn('Login: No users found in cache. Using Initial Users fallback.');
-      cache.users = INITIAL_USERS;
-      // CRITICAL FIX: Do NOT overwrite server data here!
-      // api.post('users', INITIAL_USERS); 
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || 'Login failed');
+      }
+
+      const data = await res.json();
+      if (data.success && data.user) {
+        const user = data.user;
+
+        // Fix Component Role Mismatch (Server 'ADMIN' vs Client 'Admin')
+        if (user.role === 'ADMIN' as any) user.role = UserRole.ADMIN;
+        if (user.role === 'USER' as any) user.role = UserRole.USER;
+        if (user.role === 'CUSTOMER' as any) user.role = UserRole.CUSTOMER;
+
+        // Save normalized data (local storage only, sensitive data is safe)
+        storageService.saveUser(user);
+        return user;
+      }
+      return null;
+
+    } catch (e: any) {
+      console.error('Login Error:', e);
+      throw e;
     }
-
-    const whitelist = cache.whitelist;
-    if (whitelist.length > 0) {
-      const allowed = whitelist.some((w: IpWhitelist) => w.ip === clientIp || w.ip === '0.0.0.0');
-      if (!allowed) throw new Error(`Access Denied: Your IP (${clientIp}) is not whitelisted.`);
-    }
-
-    const user = cache.users.find((u: User) => u.username === username && u.password === password);
-    if (user) {
-      if (!user.isActive) throw new Error('Account Disabled');
-
-      // Fix Component Role Mismatch (Server 'ADMIN' vs Client 'Admin')
-      if (user.role === 'ADMIN' as any) user.role = UserRole.ADMIN;
-      if (user.role === 'USER' as any) user.role = UserRole.USER;
-      if (user.role === 'CUSTOMER' as any) user.role = UserRole.CUSTOMER;
-
-      // Update last login & Save normalized data
-      user.lastLogin = new Date().toISOString();
-      storageService.saveUser(user);
-      return user;
-    }
-    return null;
   },
 
   // --- Data Export/Import ---
