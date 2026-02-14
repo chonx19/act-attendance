@@ -234,6 +234,20 @@ const Layout = () => {
             </NavLink>
           )}
 
+          {hasPermission('devices') && (
+            <NavLink
+              to="/app/devices"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className={({ isActive }) => `
+                  flex items-center px-4 py-4 rounded-lg text-lg
+                  ${isActive ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800'}
+                `}
+            >
+              <Server className="w-6 h-6 mr-4" />
+              {t('devices')}
+            </NavLink>
+          )}
+
           <div className="border-t border-slate-800 pt-4 flex justify-between items-center gap-4">
             <button
               onClick={toggleLanguage}
