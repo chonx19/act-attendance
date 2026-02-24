@@ -476,8 +476,5 @@ app.listen(PORT, '0.0.0.0', () => {
     else console.log('Mode: Local (JSON Files)');
 });
 
-// Secondary Port (Optional)
-const PORT_DEVICE = 5005;
-app.listen(PORT_DEVICE, '0.0.0.0', () => {
-    console.log(`Secondary Server listening on port ${PORT_DEVICE}`);
-});
+// Note: Secondary port (5005) is only for local use.
+// On Render/Cloud, only one port (process.env.PORT) is available.

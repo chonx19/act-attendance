@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: act-attendance
+    env: node
+    buildCommand: npm install && npm run build
+    startCommand: node server.cjs
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        sync: false  # Set this manually in Render dashboard
